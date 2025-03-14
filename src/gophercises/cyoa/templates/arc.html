@@ -1,0 +1,15 @@
+<h1>{{ .Title }}</h1>
+
+<p>{{ .Story }}</p>
+
+
+{{ if not .Options }}
+    <a href="/">Go back to the begining</a>
+{{ else }}
+<ol>
+    {{ range .Options }}
+        <li><a href="{{ .ArcKey }}">{{ .Text }}</a></li>
+    {{ end }}
+</ol>
+{{ end }}
+
