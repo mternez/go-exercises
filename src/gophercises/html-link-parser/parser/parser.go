@@ -168,7 +168,9 @@ func getNodeContent(node *html.Node) string {
 	content := make([]string, 1)
 
 	for descendant := range node.Descendants() {
-		content = append(content, descendant.Data)
+		if descendant.Type != html.CommentNode {
+			content = append(content, descendant.Data)
+		}
 	}
 
 	return strings.Join(content, "")
