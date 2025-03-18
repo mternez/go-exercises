@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"encoding/xml"
 	"regexp"
 	"strings"
 
@@ -8,11 +9,11 @@ import (
 )
 
 type Link struct {
-	Href        string
-	Children    map[string]*Link
-	TrimmedHref string
-	Internal    bool
-	host        string
+	XMLName     xml.Name         `xml:"url"`
+	Href        string           `xml:"-"`
+	Children    map[string]*Link `xml:"-"`
+	TrimmedHref string           `xml:"loc"`
+	Internal    bool             `xml:"-"`
 }
 
 func GetLinks(node *html.Node, host string) map[string]*Link {
@@ -23,7 +24,7 @@ func GetLinks(node *html.Node, host string) map[string]*Link {
 		if child.Type == html.ElementNode && child.Data == "a" {
 			var href string = getAttribute(child, "href")
 			if href != "" {
-				links[href] = NewLink(host, href)
+				links[href] = newLink(host, href)
 			}
 		}
 	}
@@ -31,15 +32,15 @@ func GetLinks(node *html.Node, host string) map[string]*Link {
 	return links
 }
 
-func NewLink(host string, href string) *Link {
+func newLink(host string, href string) *Link {
 
 	var isLinkInternalRegExp = regexp.MustCompile("^(/)|" + "^(" + host + ")")
 
 	if isLinkInternalRegExp.Match([]byte(href)) {
 		trimmedHref := trimHref(href, host)
-		return &Link{Href: href, TrimmedHref: trimmedHref, Internal: true, host: host}
+		return &Link{Href: href, TrimmedHref: trimmedHref, Internal: true}
 	} else {
-		return &Link{Href: href, Internal: false, host: host}
+		return &Link{Href: href, Internal: false}
 	}
 }
 
