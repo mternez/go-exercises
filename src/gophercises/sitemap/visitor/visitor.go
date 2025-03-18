@@ -13,31 +13,31 @@ type SyncLinksMap struct {
 	links map[string]*parser.Link
 }
 
-func (cache *SyncLinksMap) Put(link *parser.Link) {
-	cache.mu.Lock()
-	cache.links[link.Href] = link
-	cache.mu.Unlock()
+func (linksMap *SyncLinksMap) Put(link *parser.Link) {
+	linksMap.mu.Lock()
+	linksMap.links[link.Href] = link
+	linksMap.mu.Unlock()
 }
 
-func (cache *SyncLinksMap) Get(key string) (*parser.Link, bool) {
-	cache.mu.Lock()
-	defer cache.mu.Unlock()
-	val, ok := cache.links[key]
+func (linksMap *SyncLinksMap) Get(key string) (*parser.Link, bool) {
+	linksMap.mu.Lock()
+	defer linksMap.mu.Unlock()
+	val, ok := linksMap.links[key]
 	return val, ok
 }
 
-func (cache *SyncLinksMap) Range(rangeFunction func(key string, value *parser.Link)) {
-	cache.mu.Lock()
-	defer cache.mu.Unlock()
-	for key, value := range cache.links {
+func (linksMap *SyncLinksMap) Range(rangeFunction func(key string, value *parser.Link)) {
+	linksMap.mu.Lock()
+	defer linksMap.mu.Unlock()
+	for key, value := range linksMap.links {
 		rangeFunction(key, value)
 	}
 }
 
 func initSyncLinksMap() *SyncLinksMap {
-	cache := SyncLinksMap{}
-	cache.links = make(map[string]*parser.Link)
-	return &cache
+	linksMap := SyncLinksMap{}
+	linksMap.links = make(map[string]*parser.Link)
+	return &linksMap
 }
 
 func Visit(host string) *SyncLinksMap {
