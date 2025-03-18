@@ -1,8 +1,10 @@
 package visitor
 
 import (
+	"maps"
 	"net/http"
 	"sitemap/parser"
+	"slices"
 	"sync"
 
 	"golang.org/x/net/html"
@@ -32,6 +34,10 @@ func (linksMap *SyncLinksMap) Range(rangeFunction func(key string, value *parser
 	for key, value := range linksMap.links {
 		rangeFunction(key, value)
 	}
+}
+
+func (linksMap *SyncLinksMap) GetValues() []*parser.Link {
+	return slices.Collect(maps.Values(linksMap.links))
 }
 
 func initSyncLinksMap() *SyncLinksMap {

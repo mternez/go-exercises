@@ -1,7 +1,6 @@
 package main
 
 import (
-	"sitemap/parser"
 	"sitemap/visitor"
 	"sitemap/writer"
 )
@@ -13,7 +12,7 @@ func main() {
 	host := "https://www.calhoun.io/"
 
 	xmlWriter := writer.NewXMLLinkWriter("./sitemap.xml")
-	visitor.Visit(host).Range(func(key string, value *parser.Link) {
-		xmlWriter.Write(value)
-	})
+	linksMap := visitor.Visit(host)
+	xmlWriter.Write(linksMap.GetValues())
+	xmlWriter.Close()
 }

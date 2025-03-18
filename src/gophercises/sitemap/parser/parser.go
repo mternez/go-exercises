@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"encoding/xml"
 	"regexp"
 	"strings"
 
@@ -9,7 +8,6 @@ import (
 )
 
 type Link struct {
-	XMLName     xml.Name         `xml:"url"`
 	Href        string           `xml:"-"`
 	Children    map[string]*Link `xml:"-"`
 	TrimmedHref string           `xml:"loc"`

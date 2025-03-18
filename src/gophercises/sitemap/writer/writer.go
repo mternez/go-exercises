@@ -11,19 +11,31 @@ type XMLLinkWriter struct {
 	headerWritten bool
 }
 
-func (writer *XMLLinkWriter) Write(link *parser.Link) {
+type UrlSet struct {
+	XMLName xml.Name       `xml:"urlset"`
+	Xmlns   string         `xml:"xmlns,attr"`
+	Urls    []*parser.Link `xml:"url"`
+}
 
-	marshalledBytes, err := xml.MarshalIndent(link, " ", " ")
+func (writer *XMLLinkWriter) Write(links []*parser.Link) {
+
+	urlSet := &UrlSet{Xmlns: "http://www.sitemaps.org/schemas/sitemap/0.9", Urls: links}
+
+	marshalledBytes, err := xml.MarshalIndent(urlSet, " ", " ")
 
 	if err != nil {
-		panic("Failed to marshal link : " + link.Href + " - " + err.Error())
+		panic("Failed to marshal link : " + err.Error())
 	}
 
 	numberBytesWritten, err := writer.file.Write(marshalledBytes)
 
 	if numberBytesWritten <= 0 || err != nil {
-		panic("Failed to write marshalled link to file : " + link.Href + " - " + err.Error())
+		panic("Failed to write marshalled link to file : " + err.Error())
 	}
+}
+
+func (writer *XMLLinkWriter) Close() error {
+	return writer.file.Close()
 }
 
 func NewXMLLinkWriter(filePath string) *XMLLinkWriter {
