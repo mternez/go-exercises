@@ -2,108 +2,103 @@ package cli
 
 import (
 	"errors"
-	"fmt"
 	"os"
-	"reflect"
-	"strconv"
 )
 
-type CommandArgument struct {
-	name      string
-	valueType reflect.Kind
-	nullable  bool
+type CommandRunner interface {
+	Run(command *Command) (bool, error)
 }
 
-func (c *CommandArgument) Validate(value string) (bool, error) {
+type CommandArgument struct {
+	Name     string
+	nullable bool
+	Value    string
+}
+
+type Command struct {
+	Name      string
+	arguments map[string]*CommandArgument
+	Run       func(arguments map[string]*CommandArgument) (bool, error)
+}
+
+func NewCommandArgument(name string, nullable bool) *CommandArgument {
+	return &CommandArgument{Name: name, nullable: nullable}
+}
+
+func NewCommand(name string, runner func(arguments map[string]*CommandArgument) (bool, error), arguments ...*CommandArgument) *Command {
+
+	command := &Command{Name: name, Run: runner, arguments: make(map[string]*CommandArgument)}
+	for _, argument := range arguments {
+		command.arguments[argument.Name] = argument
+	}
+	return command
+}
+
+func (c *CommandArgument) Validate() (bool, error) {
 	var err error
 	var valueValid bool = true
-	nameValid := c.name != ""
+	nameValid := c.Name != ""
 	if !c.nullable {
-		valueValid = value != ""
+		valueValid = c.Value != ""
 		if !valueValid {
-			err = errors.New("Argument '" + c.name + "' has nil value '" + value + "' but is not declared nullable.")
+			err = errors.New("'" + c.Name + "' must be set.")
 		}
-	}
-	switch c.valueType {
-	case reflect.Int:
-		_, err = strconv.ParseInt(value, 10, 64)
-		valueValid = err != nil
-	case reflect.Bool:
-		_, err = strconv.ParseBool(value)
-		valueValid = err != nil
-	default:
-		valueValid = true
-	}
-	if !valueValid {
-		err = errors.New("Argument '" + c.name + "' is declared as '" + c.valueType.String() + "'.")
 	}
 	return nameValid && valueValid, err
 }
 
-func NewCommandArgument(name string, valueType reflect.Kind, nullable bool) *CommandArgument {
-	return &CommandArgument{name: name, valueType: valueType, nullable: nullable}
-}
-
-type Command struct {
-	name      string
-	arguments map[string]*CommandArgument
-}
-
-func NewCommand(name string) *Command {
-	return &Command{name: name, arguments: make(map[string]*CommandArgument)}
-}
-
 func (c *Command) AddArgument(arg *CommandArgument) {
-	c.arguments[arg.name] = arg
-}
-
-type ShellContext struct {
-	// Context : Args should be a map (argname, argvalue)
-	args []string
+	c.arguments[arg.Name] = arg
 }
 
 type Shell struct {
-	context  *ShellContext
 	commands map[string]*Command
 }
 
-func InitShell(commands []*Command) *Shell {
-
-	var ctx *ShellContext
-
-	// TODO : Constructing arguments should be more complexe
-	// Exemple :
-	// $ task add clean dishes
-	// Added "clean dishes" to your task list.
-	// Here it can't just be {"add", "clean"}
-	// Though in this case it can be considered that we'll only ever have one argument
-	if len(os.Args) > 1 {
-		ctx = &ShellContext{args: os.Args[1:]}
-	} else {
-		ctx = &ShellContext{args: make([]string, 0)}
-	}
+func InitShell(commands ...*Command) *Shell {
 
 	commandsMap := make(map[string]*Command)
 	for _, command := range commands {
-		commandsMap[command.name] = command
+		commandsMap[command.Name] = command
 	}
 
-	return &Shell{context: ctx, commands: commandsMap}
+	return &Shell{commands: commandsMap}
 }
 
 func (s *Shell) Run() error {
-	commandName := s.context.args[0]
+
+	args := os.Args[1:]
+
+	commandName := args[0]
+
 	command, ok := s.commands[commandName]
+
 	if !ok {
 		return errors.New("Command '" + commandName + "' does not exist.")
 	}
-	ind := 1
-	for _, value := range command.arguments {
-		_, err := value.Validate(s.context.args[ind])
-		if err != nil {
-			return err
+
+	args = args[1:]
+
+	var currentArgumentName string
+
+	for _, val := range args {
+
+		argument, isArgument := command.arguments[val]
+
+		if isArgument {
+			currentArgumentName = argument.Name
+		} else {
+			command.arguments[currentArgumentName].Value = command.arguments[currentArgumentName].Value + " " + val
 		}
 	}
-	fmt.Println(command.name)
-	return nil
+
+	for _, command := range command.arguments {
+		_, err := command.Validate()
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	_, err := command.Run(command.arguments)
+	return err
 }

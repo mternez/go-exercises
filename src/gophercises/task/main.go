@@ -2,19 +2,42 @@ package main
 
 import (
 	"fmt"
-	"reflect"
 	"task/cli"
 )
 
+func Run(command *cli.Command) (bool, error) {
+	fmt.Println(command.Name)
+	return false, nil
+}
+
 func main() {
-	commands := make([]*cli.Command, 1)
 
-	commands[0] = cli.NewCommand("add")
+	addCommand := cli.NewCommand(
+		"add",
+		func(arguments map[string]*cli.CommandArgument) (bool, error) {
+			for key, value := range arguments {
+				fmt.Print(key + " - > ")
+				fmt.Println(value.Value)
+			}
+			return false, nil
+		},
+		cli.NewCommandArgument("name", false),
+		cli.NewCommandArgument("description", true),
+	)
 
-	commandArgument := cli.NewCommandArgument("name", reflect.Int, false)
-	commands[0].AddArgument(commandArgument)
+	removeCommand := cli.NewCommand(
+		"remove",
+		func(arguments map[string]*cli.CommandArgument) (bool, error) {
+			for key, value := range arguments {
+				fmt.Print(key + " - > ")
+				fmt.Println(value.Value)
+			}
+			return false, nil
+		},
+		cli.NewCommandArgument("name", false),
+	)
 
-	shell := cli.InitShell(commands)
+	shell := cli.InitShell(addCommand, removeCommand)
 	err := shell.Run()
 	if err != nil {
 		fmt.Println(err)
