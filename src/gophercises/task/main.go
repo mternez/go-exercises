@@ -14,12 +14,12 @@ func main() {
 
 	addCommand := cli.NewCommand(
 		"add",
-		func(arguments map[string]*cli.CommandArgument) (bool, error) {
+		func(arguments map[string]*cli.CommandArgument) error {
 			for key, value := range arguments {
 				fmt.Print(key + " - > ")
 				fmt.Println(value.Value)
 			}
-			return false, nil
+			return nil
 		},
 		cli.NewCommandArgument("name", false),
 		cli.NewCommandArgument("description", true),
@@ -27,12 +27,12 @@ func main() {
 
 	removeCommand := cli.NewCommand(
 		"remove",
-		func(arguments map[string]*cli.CommandArgument) (bool, error) {
+		func(arguments map[string]*cli.CommandArgument) error {
 			for key, value := range arguments {
 				fmt.Print(key + " - > ")
 				fmt.Println(value.Value)
 			}
-			return false, nil
+			return nil
 		},
 		cli.NewCommandArgument("name", false),
 	)

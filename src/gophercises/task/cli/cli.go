@@ -18,14 +18,14 @@ type CommandArgument struct {
 type Command struct {
 	Name      string
 	arguments map[string]*CommandArgument
-	Run       func(arguments map[string]*CommandArgument) (bool, error)
+	Run       func(arguments map[string]*CommandArgument) error
 }
 
 func NewCommandArgument(name string, nullable bool) *CommandArgument {
 	return &CommandArgument{Name: name, nullable: nullable}
 }
 
-func NewCommand(name string, runner func(arguments map[string]*CommandArgument) (bool, error), arguments ...*CommandArgument) *Command {
+func NewCommand(name string, runner func(arguments map[string]*CommandArgument) error, arguments ...*CommandArgument) *Command {
 
 	command := &Command{Name: name, Run: runner, arguments: make(map[string]*CommandArgument)}
 	for _, argument := range arguments {
@@ -99,6 +99,5 @@ func (s *Shell) Run() error {
 		}
 	}
 
-	_, err := command.Run(command.arguments)
-	return err
+	return command.Run(command.arguments)
 }
