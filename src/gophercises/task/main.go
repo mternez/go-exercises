@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"task/cli"
 )
 
@@ -61,19 +60,7 @@ func main() {
 		do,
 	)
 
-	if len(os.Args) < 2 {
-		runner.PrintHelp()
-		return
-	}
-
-	errs := runner.Init()
-
-	if len(errs) > 0 {
-		Print(errs)
-		return
-	}
-
-	errs = runner.Run()
-
-	Print(errs)
+	runner.Init()
+	runner.Run()
+	Print(runner.Errs)
 }

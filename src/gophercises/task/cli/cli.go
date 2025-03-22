@@ -142,28 +142,45 @@ func (c *command) validate() []error {
 	return errs
 }
 
+func (c *command) printHelp() {
+	fmt.Printf("%s : %s\n\n", c.name, c.description)
+	fmt.Printf("Usage: %s ", c.name)
+	for _, arg := range c.arguments {
+		fmt.Printf("%s [%s] ", arg.name, arg.name)
+	}
+	fmt.Printf("\n\nArguments: \n")
+	for _, arg := range c.arguments {
+		if arg.optional {
+			fmt.Printf("\t%s (Optional)\t%s\n", arg.name, arg.helper)
+		} else {
+			fmt.Printf("\t%s\t%s\n", arg.name, arg.helper)
+		}
+	}
+}
+
 type CommandRunner struct {
 	name        string
 	description string
 	commands    map[string]*command
 	selected    *command
+	Errs        []error
+	help        bool
 }
 
 func (runner *CommandRunner) PrintHelp() {
-	fmt.Println(runner.description)
-	fmt.Println()
+	fmt.Printf("%s\n\n", runner.description)
 	fmt.Println("Usage:")
-	fmt.Printf("\t%s [command]\n", runner.name)
+	fmt.Printf("\t%s [command]\n\n", runner.name)
 	fmt.Println("Available commands:")
 	for _, command := range runner.commands {
 		fmt.Printf("\t%s\t%s\n", command.name, command.description)
 	}
-	fmt.Printf("Use \"%s [command] --help\" for more information about a command.\n", runner.name)
+	fmt.Printf("\nUse \"%s [command] --help\" for more information about a command.\n", runner.name)
 }
 
 func NewCommandRunner(name string, description string, commands ...*command) *CommandRunner {
 
-	runner := &CommandRunner{name: name, description: description, commands: make(map[string]*command)}
+	runner := &CommandRunner{name: name, description: description, commands: make(map[string]*command), Errs: make([]error, 0)}
 
 	for _, command := range commands {
 		runner.commands[command.name] = command
@@ -172,12 +189,11 @@ func NewCommandRunner(name string, description string, commands ...*command) *Co
 	return runner
 }
 
-func (runner *CommandRunner) Init() []error {
-
-	errs := make([]error, 0)
+func (runner *CommandRunner) Init() {
 
 	if len(os.Args) < 2 {
-		return append(errs, errors.New("No command provided."))
+		runner.help = true
+		return
 	}
 
 	args := os.Args[1:]
@@ -187,7 +203,8 @@ func (runner *CommandRunner) Init() []error {
 	selectedCommand, ok := runner.commands[commandName]
 
 	if !ok {
-		return append(errs, errors.New("Command '"+selectedCommand.name+"' does not exist."))
+		runner.Errs = append(runner.Errs, errors.New("Command '"+commandName+"' does not exist."))
+		return
 	}
 
 	runner.selected = selectedCommand
@@ -196,6 +213,12 @@ func (runner *CommandRunner) Init() []error {
 
 	var currentArgument *argumentDescription
 	for _, val := range args {
+
+		if val == "--help" {
+			runner.help = true
+			return
+		}
+
 		argument := runner.selected.arguments[val]
 		if argument != nil {
 			currentArgument = argument
@@ -207,21 +230,29 @@ func (runner *CommandRunner) Init() []error {
 	}
 
 	// Validate each command argument
-	errs = runner.selected.validate()
+	validationErrs := runner.selected.validate()
 
-	return errs
+	if len(validationErrs) > 0 {
+		runner.Errs = append(runner.Errs, validationErrs...)
+	}
 }
 
-func (runner *CommandRunner) Run() []error {
+func (runner *CommandRunner) Run() {
 
-	errs := make([]error, 0)
-
-	// Run the command
-	err := runner.selected.run(runner.selected.values)
-
-	if err != nil {
-		errs = append(errs, err)
+	if runner.help {
+		if runner.selected != nil {
+			runner.selected.printHelp()
+			return
+		}
+		runner.PrintHelp()
+		return
 	}
 
-	return errs
+	// Run the command
+	if len(runner.Errs) == 0 {
+		runErrors := runner.selected.run(runner.selected.values)
+		if runErrors != nil {
+			runner.Errs = append(runner.Errs, runErrors)
+		}
+	}
 }
