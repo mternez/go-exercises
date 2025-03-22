@@ -5,99 +5,211 @@ import (
 	"os"
 )
 
-type CommandRunner interface {
-	Run(command *Command) (bool, error)
+type argumentDescriptionOption interface {
+	apply(command *argumentDescription)
 }
 
-type CommandArgument struct {
-	Name     string
+type argumentNameOption struct {
+	name string
+}
+
+func (opt *argumentNameOption) apply(command *argumentDescription) {
+	command.name = opt.name
+}
+
+type argumentHelperOption struct {
+	helper string
+}
+
+func (opt *argumentHelperOption) apply(command *argumentDescription) {
+	command.helper = opt.helper
+}
+
+type argumentOptionalOption struct {
+	optional bool
+}
+
+func (opt *argumentOptionalOption) apply(command *argumentDescription) {
+	command.optional = opt.optional
+}
+
+type argumentNullableOption struct {
 	nullable bool
-	Value    string
 }
 
-type Command struct {
-	Name      string
-	arguments map[string]*CommandArgument
-	Run       func(arguments map[string]*CommandArgument) error
+func (opt *argumentNullableOption) apply(command *argumentDescription) {
+	command.nullable = opt.nullable
 }
 
-func NewCommandArgument(name string, nullable bool) *CommandArgument {
-	return &CommandArgument{Name: name, nullable: nullable}
+type argumentValidatorOption struct {
+	validator func(v string) error
 }
 
-func NewCommand(name string, runner func(arguments map[string]*CommandArgument) error, arguments ...*CommandArgument) *Command {
+func (opt *argumentValidatorOption) apply(command *argumentDescription) {
+	command.validator = opt.validator
+}
 
-	command := &Command{Name: name, Run: runner, arguments: make(map[string]*CommandArgument)}
-	for _, argument := range arguments {
-		command.arguments[argument.Name] = argument
+func WithName(name string) argumentDescriptionOption {
+	return &argumentNameOption{name: name}
+}
+
+func WithHelper(helper string) argumentDescriptionOption {
+	return &argumentHelperOption{helper: helper}
+}
+
+func WithOptional(optional bool) argumentDescriptionOption {
+	return &argumentOptionalOption{optional: optional}
+}
+
+func WithValidator(validator func(v string) error) argumentDescriptionOption {
+	return &argumentValidatorOption{validator: validator}
+}
+
+func WithNullable(nullable bool) argumentDescriptionOption {
+	return &argumentNullableOption{nullable: nullable}
+}
+
+type argumentDescription struct {
+	name      string
+	helper    string
+	optional  bool
+	nullable  bool
+	validator func(v string) error
+}
+
+type ArgumentValue struct {
+	Name  string
+	Value string
+}
+
+type command struct {
+	name      string
+	arguments map[string]*argumentDescription
+	values    map[string]*ArgumentValue
+	run       func(arguments map[string]*ArgumentValue) error
+}
+
+func WithArgument(opts ...argumentDescriptionOption) *argumentDescription {
+	argumentDescription := &argumentDescription{}
+	for _, opt := range opts {
+		opt.apply(argumentDescription)
+	}
+	return argumentDescription
+}
+
+func NewCommand(name string, run func(arguments map[string]*ArgumentValue) error, arguments ...*argumentDescription) *command {
+
+	command := &command{name: name, run: run, arguments: make(map[string]*argumentDescription), values: make(map[string]*ArgumentValue)}
+	for _, arg := range arguments {
+		command.arguments[arg.name] = arg
 	}
 	return command
 }
 
-func (c *CommandArgument) Validate() (bool, error) {
-	var err error
-	var valueValid bool = true
-	nameValid := c.Name != ""
-	if !c.nullable {
-		valueValid = c.Value != ""
-		if !valueValid {
-			err = errors.New("'" + c.Name + "' must be set.")
+func (description *argumentDescription) validate(value string) []error {
+
+	errs := make([]error, 0)
+
+	if description.name == "" {
+		errs = append(errs, errors.New("'"+description.name+"' is not a valid command argument name."))
+	}
+
+	if !description.nullable && value == "" {
+		errs = append(errs, errors.New("'"+description.name+"' must have a value."))
+	}
+
+	if description.validator != nil {
+		errs = append(errs, description.validator(value))
+	}
+
+	return errs
+}
+
+func (c *command) validate() []error {
+	errs := make([]error, 0)
+	for _, arg := range c.arguments {
+		argValue := c.values[arg.name]
+		if argValue == nil {
+			if !arg.optional {
+				errs = append(errs, errors.New("'"+arg.name+"' must be set."))
+			}
+		} else {
+			errs = append(errs, arg.validate(argValue.Value)...)
 		}
 	}
-	return nameValid && valueValid, err
+	return errs
 }
 
-func (c *Command) AddArgument(arg *CommandArgument) {
-	c.arguments[arg.Name] = arg
+type CommandRunner struct {
+	commands map[string]*command
+	selected *command
 }
 
-type Shell struct {
-	commands map[string]*Command
-}
+func NewCommandRunner(commands ...*command) *CommandRunner {
 
-func InitShell(commands ...*Command) *Shell {
+	runner := &CommandRunner{commands: make(map[string]*command)}
 
-	commandsMap := make(map[string]*Command)
 	for _, command := range commands {
-		commandsMap[command.Name] = command
+		runner.commands[command.name] = command
 	}
 
-	return &Shell{commands: commandsMap}
+	return runner
 }
 
-func (s *Shell) Run() error {
+func (runner *CommandRunner) Init() []error {
+
+	errs := make([]error, 0)
+
+	if len(os.Args) < 2 {
+		return append(errs, errors.New("no command provided"))
+	}
 
 	args := os.Args[1:]
 
 	commandName := args[0]
 
-	command, ok := s.commands[commandName]
+	selectedCommand, ok := runner.commands[commandName]
 
 	if !ok {
-		return errors.New("Command '" + commandName + "' does not exist.")
+		return append(errs, errors.New("Command '"+selectedCommand.name+"' does not exist."))
 	}
+
+	runner.selected = selectedCommand
 
 	args = args[1:]
 
-	var currentArgumentName string
-
+	var currentArgument *argumentDescription
 	for _, val := range args {
-
-		argument, isArgument := command.arguments[val]
-
-		if isArgument {
-			currentArgumentName = argument.Name
-		} else {
-			command.arguments[currentArgumentName].Value = command.arguments[currentArgumentName].Value + " " + val
+		argument := runner.selected.arguments[val]
+		if argument != nil {
+			currentArgument = argument
+			runner.selected.values[currentArgument.name] = &ArgumentValue{Name: currentArgument.name}
+		} else if currentArgument != nil {
+			currentValue := runner.selected.values[currentArgument.name]
+			currentValue.Value = currentValue.Value + val
 		}
 	}
 
-	for _, command := range command.arguments {
-		_, err := command.Validate()
-		if err != nil {
-			panic(err)
-		}
+	// Validate each command argument
+	errs = runner.selected.validate()
+
+	if len(errs) != 0 {
+		return errs
 	}
 
-	return command.Run(command.arguments)
+	return errs
+}
+
+func (runner *CommandRunner) Run() []error {
+
+	errs := make([]error, 0)
+
+	// Run the command
+	err := runner.selected.run(runner.selected.values)
+
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	return errs
 }

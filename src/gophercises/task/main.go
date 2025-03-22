@@ -5,42 +5,62 @@ import (
 	"task/cli"
 )
 
-func Run(command *cli.Command) (bool, error) {
-	fmt.Println(command.Name)
-	return false, nil
-}
-
 func main() {
 
 	addCommand := cli.NewCommand(
 		"add",
-		func(arguments map[string]*cli.CommandArgument) error {
+		func(arguments map[string]*cli.ArgumentValue) error {
 			for key, value := range arguments {
 				fmt.Print(key + " - > ")
 				fmt.Println(value.Value)
 			}
 			return nil
 		},
-		cli.NewCommandArgument("name", false),
-		cli.NewCommandArgument("description", true),
+		cli.WithArgument(
+			cli.WithName("title"),
+			cli.WithHelper("Title of the task"),
+			cli.WithOptional(false),
+		),
+		cli.WithArgument(
+			cli.WithName("description"),
+			cli.WithHelper("Description of the task"),
+			cli.WithOptional(true),
+		),
 	)
 
 	removeCommand := cli.NewCommand(
 		"remove",
-		func(arguments map[string]*cli.CommandArgument) error {
+		func(arguments map[string]*cli.ArgumentValue) error {
 			for key, value := range arguments {
 				fmt.Print(key + " - > ")
 				fmt.Println(value.Value)
 			}
 			return nil
 		},
-		cli.NewCommandArgument("name", false),
+		cli.WithArgument(
+			cli.WithName("title"),
+			cli.WithHelper("Title of the task"),
+			cli.WithOptional(false),
+		),
 	)
 
-	shell := cli.InitShell(addCommand, removeCommand)
-	err := shell.Run()
-	if err != nil {
-		fmt.Println(err)
-		return
+	runner := cli.NewCommandRunner(addCommand, removeCommand)
+
+	errs := runner.Init()
+
+	if len(errs) != 0 {
+		for _, err := range errs {
+			fmt.Print("ERR: ")
+			fmt.Println(err)
+		}
+	}
+
+	errs = runner.Run()
+
+	if len(errs) != 0 {
+		for _, err := range errs {
+			fmt.Print("ERR: ")
+			fmt.Println(err)
+		}
 	}
 }
