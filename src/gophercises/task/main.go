@@ -2,13 +2,22 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"task/cli"
 )
 
+func Print(errs []error) {
+	for _, err := range errs {
+		fmt.Print("ERR: ")
+		fmt.Println(err)
+	}
+}
+
 func main() {
 
-	addCommand := cli.NewCommand(
+	add := cli.NewCommand(
 		"add",
+		"Add a new task to your TODO list",
 		func(arguments map[string]*cli.ArgumentValue) error {
 			for key, value := range arguments {
 				fmt.Print(key + " - > ")
@@ -28,8 +37,9 @@ func main() {
 		),
 	)
 
-	removeCommand := cli.NewCommand(
-		"remove",
+	do := cli.NewCommand(
+		"do",
+		"Mark a task on your TODO list as complete",
 		func(arguments map[string]*cli.ArgumentValue) error {
 			for key, value := range arguments {
 				fmt.Print(key + " - > ")
@@ -44,25 +54,26 @@ func main() {
 		),
 	)
 
-	runner := cli.NewCommandRunner(addCommand, removeCommand)
+	runner := cli.NewCommandRunner(
+		"task",
+		"task is a CLI for managing your TODOs.",
+		add,
+		do,
+	)
+
+	if len(os.Args) < 2 {
+		runner.PrintHelp()
+		return
+	}
 
 	errs := runner.Init()
 
-	if len(errs) != 0 {
-		for _, err := range errs {
-			fmt.Print("ERR: ")
-			fmt.Println(err)
-		}
+	if len(errs) > 0 {
+		Print(errs)
 		return
 	}
 
 	errs = runner.Run()
 
-	if len(errs) != 0 {
-		for _, err := range errs {
-			fmt.Print("ERR: ")
-			fmt.Println(err)
-		}
-		return
-	}
+	Print(errs)
 }

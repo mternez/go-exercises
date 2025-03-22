@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"os"
 )
 
@@ -83,10 +84,11 @@ type ArgumentValue struct {
 }
 
 type command struct {
-	name      string
-	arguments map[string]*argumentDescription
-	values    map[string]*ArgumentValue
-	run       func(arguments map[string]*ArgumentValue) error
+	name        string
+	description string
+	arguments   map[string]*argumentDescription
+	values      map[string]*ArgumentValue
+	run         func(arguments map[string]*ArgumentValue) error
 }
 
 func WithArgument(opts ...argumentDescriptionOption) *argumentDescription {
@@ -97,9 +99,9 @@ func WithArgument(opts ...argumentDescriptionOption) *argumentDescription {
 	return argumentDescription
 }
 
-func NewCommand(name string, run func(arguments map[string]*ArgumentValue) error, arguments ...*argumentDescription) *command {
+func NewCommand(name string, description string, run func(arguments map[string]*ArgumentValue) error, arguments ...*argumentDescription) *command {
 
-	command := &command{name: name, run: run, arguments: make(map[string]*argumentDescription), values: make(map[string]*ArgumentValue)}
+	command := &command{name: name, description: description, run: run, arguments: make(map[string]*argumentDescription), values: make(map[string]*ArgumentValue)}
 	for _, arg := range arguments {
 		command.arguments[arg.name] = arg
 	}
@@ -141,13 +143,27 @@ func (c *command) validate() []error {
 }
 
 type CommandRunner struct {
-	commands map[string]*command
-	selected *command
+	name        string
+	description string
+	commands    map[string]*command
+	selected    *command
 }
 
-func NewCommandRunner(commands ...*command) *CommandRunner {
+func (runner *CommandRunner) PrintHelp() {
+	fmt.Println(runner.description)
+	fmt.Println()
+	fmt.Println("Usage:")
+	fmt.Printf("\t%s [command]\n", runner.name)
+	fmt.Println("Available commands:")
+	for _, command := range runner.commands {
+		fmt.Printf("\t%s\t%s\n", command.name, command.description)
+	}
+	fmt.Printf("Use \"%s [command] --help\" for more information about a command.\n", runner.name)
+}
 
-	runner := &CommandRunner{commands: make(map[string]*command)}
+func NewCommandRunner(name string, description string, commands ...*command) *CommandRunner {
+
+	runner := &CommandRunner{name: name, description: description, commands: make(map[string]*command)}
 
 	for _, command := range commands {
 		runner.commands[command.name] = command
@@ -161,7 +177,7 @@ func (runner *CommandRunner) Init() []error {
 	errs := make([]error, 0)
 
 	if len(os.Args) < 2 {
-		return append(errs, errors.New("no command provided"))
+		return append(errs, errors.New("No command provided."))
 	}
 
 	args := os.Args[1:]
