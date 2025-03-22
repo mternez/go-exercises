@@ -53,6 +53,7 @@ func main() {
 			fmt.Print("ERR: ")
 			fmt.Println(err)
 		}
+		return
 	}
 
 	errs = runner.Run()
@@ -62,5 +63,6 @@ func main() {
 			fmt.Print("ERR: ")
 			fmt.Println(err)
 		}
+		return
 	}
 }

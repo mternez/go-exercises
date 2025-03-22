@@ -193,10 +193,6 @@ func (runner *CommandRunner) Init() []error {
 	// Validate each command argument
 	errs = runner.selected.validate()
 
-	if len(errs) != 0 {
-		return errs
-	}
-
 	return errs
 }
 
