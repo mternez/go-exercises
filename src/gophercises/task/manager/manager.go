@@ -84,6 +84,28 @@ func (m *TaskManager) FindAll() ([]*Task, error) {
 	return m.repository.Values(m.db)
 }
 
+func (m *TaskManager) FindToDo() ([]*Task, error) {
+	err := m.openConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer m.closeConnection()
+	return m.repository.FilterAll(m.db, func (key string, value *Task) bool {
+		return !value.Done
+	})
+}
+
+func (m *TaskManager) FindDone() ([]*Task, error) {
+	err := m.openConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer m.closeConnection()
+	return m.repository.FilterAll(m.db, func (key string, value *Task) bool {
+		return value.Done
+	})
+}
+
 func (m *TaskManager) Remove(title string) error {
 	err := m.openConnection()
 	if err != nil {

@@ -92,17 +92,30 @@ func main() {
 		"list",
 		"List all of your incomplete tasks",
 		func(arguments map[string]*cli.ArgumentValue) error {
-			tasks, err := mgr.FindAll()
+			tasks, err := mgr.FindToDo()
 			if err != nil {
 				return err
 			}
 			fmt.Printf("Tasks : \n\n")
 			for _, task := range tasks {
-				if task.Done {
-					fmt.Printf("\t[X]\t'%s'\t%s\n", task.Title, task.Description)
-				} else {
-					fmt.Printf("\t[ ]\t'%s'\t%s\n", task.Title, task.Description)
-				}
+				fmt.Printf("\t'%s'\t%s\n", task.Title, task.Description)
+			}
+			fmt.Printf("\n")
+			return nil
+		},
+	)
+
+	completed := cli.NewCommand(
+		"completed",
+		"List all of your completed tasks",
+		func(arguments map[string]*cli.ArgumentValue) error {
+			tasks, err := mgr.FindDone()
+			if err != nil {
+				return err
+			}
+			fmt.Printf("Tasks : \n\n")
+			for _, task := range tasks {
+				fmt.Printf("\t'%s'\t%s\n", task.Title, task.Description)
 			}
 			fmt.Printf("\n")
 			return nil
@@ -116,6 +129,7 @@ func main() {
 		remove,
 		do,
 		list,
+		completed,
 	)
 
 	runner.Init()
