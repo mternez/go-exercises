@@ -83,3 +83,12 @@ func (m *TaskManager) FindAll() ([]*Task, error) {
 	defer m.closeConnection()
 	return m.repository.Values(m.db)
 }
+
+func (m *TaskManager) Remove(title string) error {
+	err := m.openConnection()
+	if err != nil {
+		return err
+	}
+	defer m.closeConnection()
+	return m.repository.Delete(m.db, title)
+}

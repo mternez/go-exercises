@@ -65,3 +65,13 @@ func (r *Repository[V]) Values(db *bolt.DB) ([]V, error) {
 	})
 	return values, err
 }
+func (r *Repository[V]) Delete(db *bolt.DB, key string) error {
+	err := db.Update(func(tx *bolt.Tx) error {
+		bucket, er := r.getBucket(tx)
+		if er != nil {
+			return er
+		}
+		return bucket.Delete([]byte(key))
+	})
+	return err
+}

@@ -45,6 +45,25 @@ func main() {
 		),
 	)
 
+	remove := cli.NewCommand(
+		"remove",
+		"Removes a task from your TODO list",
+		func(arguments map[string]*cli.ArgumentValue) error {
+			title := arguments["title"].Value
+			err := mgr.Remove(title)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("\n'%s' has been removed.\n", title)
+			return nil
+		},
+		cli.WithArgument(
+			cli.WithName("title"),
+			cli.WithHelper("Title of the task"),
+			cli.WithOptional(false),
+		),
+	)
+
 	do := cli.NewCommand(
 		"do",
 		"Mark a task on your TODO list as complete",
@@ -94,6 +113,7 @@ func main() {
 		"task",
 		"task is a CLI for managing your TODOs.",
 		add,
+		remove,
 		do,
 		list,
 	)
