@@ -16,7 +16,7 @@ type Stack[T any] struct {
 
 func (s *Stack[E]) Push(element E) {
 	if s.top != nil {
-		s.top.next = &Element[E]{value: element}
+		s.top.next = &Element[E]{value: element, previous: s.top}
 		s.top = s.top.next
 	} else {
 		s.top = &Element[E]{value: element}
@@ -25,15 +25,16 @@ func (s *Stack[E]) Push(element E) {
 
 func (s *Stack[E]) Pop() *E {
 	if s.top != nil {
-		head := s.top
-		if s.top.previous != nil {
-			s.top = s.top.previous
-			head.previous = nil
+		previousHead := s.top
+		if previousHead.previous != nil {
+			s.top = previousHead.previous
 			s.top.next = nil
 		} else {
 			s.top = nil
 		}
-		return &head.value
+		previousHead.next = nil
+		previousHead.previous = nil
+		return &previousHead.value
 	}
 	return nil
 }
