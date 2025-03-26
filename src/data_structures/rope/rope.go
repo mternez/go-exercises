@@ -87,15 +87,18 @@ func IterativeString(root *RopeNode) string {
 
 	st.Push(root)
 	for !st.Empty() {
-		head := st.Peek()
+		head := *st.Pop()
 		if head != nil {
-			if head.left != nil {
-				st.Push(head.left)
+			if head.isLeaf() {
+				str += head.data
 			} else {
-				st.Push(head.right)
+				if head.right != nil {
+					st.Push(head.right)
+				}
+				if head.left != nil {
+					st.Push(head.left)
+				}
 			}
-		} else {
-			st.Pop()
 		}
 	}
 
