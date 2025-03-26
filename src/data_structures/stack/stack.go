@@ -26,9 +26,13 @@ func (s *Stack[E]) Push(element E) {
 func (s *Stack[E]) Pop() *E {
 	if s.top != nil {
 		head := s.top
-		s.top = s.top.previous
-		head.previous = nil
-		s.top.next = nil
+		if s.top.previous != nil {
+			s.top = s.top.previous
+			head.previous = nil
+			s.top.next = nil
+		} else {
+			s.top = nil
+		}
 		return &head.value
 	}
 	return nil
