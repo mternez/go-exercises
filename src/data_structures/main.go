@@ -6,6 +6,9 @@ import (
 )
 
 func main() {
-	root := rope.NewRope("Hello World!")
-	fmt.Println(rope.IterativeString(root))
+	root := rope.NewRope("Ropes are very cool you try to use them")
+	for _, leaf := range root.CollectLeaves() {
+		fmt.Println(leaf.Data())
+	}
+	fmt.Println(root.Weight())
 }

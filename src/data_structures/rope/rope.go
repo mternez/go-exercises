@@ -31,47 +31,46 @@ func (n *RopeNode) Data() string {
 	return n.data
 }
 
-func IsValidRope(n *RopeNode) bool {
-	return n.data == "" || n.isLeaf() || n.isNonLeaf()
+func (n *RopeNode) Weight() int {
+	weight := 0
+	if n.left != nil {
+		leavesOnLeftChild := n.left.CollectLeaves()
+		for _,leaf := range leavesOnLeftChild {
+			weight += leaf.len
+		}
+	}
+	return weight
 }
 
-func NewRope(s string) *RopeNode {
-	if s == "" {
-		return nil
+/**
+	Collects all leaves starting from node.
+**/
+func (node *RopeNode) CollectLeaves() []*RopeNode {
+
+	leaves := make([]*RopeNode, 0)
+
+	st := &stack.Stack[*RopeNode]{}
+
+	st.Push(node)
+
+	for !st.Empty() {
+		head := *st.Pop()
+		if head != nil {
+			if head.isLeaf() {
+				leaves = append(leaves, head)
+			}
+			if head.right != nil {
+				st.Push(head.right)
+			}
+			if head.left != nil {
+				st.Push(head.left)
+			}
+		}
 	}
-	length := len(s)
-	half := length / 2
-	rope := &RopeNode{len: length}
-	if half == 0 {
-		rope.data = s
-		rope.len = length
-		return rope
-	}
-	leftString := s[:half]
-	rightString := s[half:]
-	rope.left = NewRope(leftString)
-	rope.right = NewRope(rightString)
-	return rope
+	return leaves
 }
 
-func String(r *RopeNode) string {
-	var s string
-	if r == nil {
-		return s
-	}
-	if r.data != "" {
-		s = s + r.data
-	}
-	if r.left != nil {
-		s = s + String(r.left)
-	}
-	if r.right != nil {
-		s = s + String(r.right)
-	}
-	return s
-}
-
-func IterativeString(root *RopeNode) string {
+func (root *RopeNode) String() string {
 
 	if root == nil {
 		return ""
@@ -82,9 +81,7 @@ func IterativeString(root *RopeNode) string {
 	}
 
 	var str string
-
 	st := &stack.Stack[*RopeNode]{}
-
 	st.Push(root)
 	for !st.Empty() {
 		head := *st.Pop()
@@ -101,6 +98,57 @@ func IterativeString(root *RopeNode) string {
 			}
 		}
 	}
-
 	return str
 }
+
+func NewRope(s string) *RopeNode {
+	if s == "" {
+		return nil
+	}
+	length := len(s)
+	half := length / 2
+	rope := &RopeNode{len: half}
+	if half == 0 {
+		rope.data = s
+		rope.len = 1
+		return rope
+	}
+	leftString := s[:half]
+	rightString := s[half:]
+	rope.left = NewRope(leftString)
+	rope.right = NewRope(rightString)
+	return rope
+}
+
+func IsValidRope(n *RopeNode) bool {
+	return n.data == "" || n.isLeaf() || n.isNonLeaf()
+}
+
+/**
+	Concatenates ropes "a" and "b".
+**/
+func Concatenate(a *RopeNode, b *RopeNode) *RopeNode {
+
+	root := &RopeNode{left: a, right: b}
+
+	return root
+}
+
+/**
+	Splits "rope" at position "pos" into two new ropes.
+**/
+func Split(rope *RopeNode, pos int) (*RopeNode, *RopeNode) {
+	return nil, nil
+}
+
+func (n *RopeNode) Insert(pos int, str string) {
+
+}
+
+/**
+	Delete a substring from a specified position and length.
+**/
+func (n *RopeNode) Delete(start int, length int) {
+
+}
+
