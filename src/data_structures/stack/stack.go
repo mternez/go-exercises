@@ -40,7 +40,11 @@ func (s *Stack[E]) Pop() *E {
 }
 
 func (s *Stack[E]) Peek() E {
-	return s.top.value
+	var value E
+	if s.top != nil {
+		value = s.top.value
+	}
+	return value
 }
 
 func (s *Stack[E]) Empty() bool {

@@ -1,7 +1,6 @@
 package rope
 
 import (
-	"data_structures/queue"
 	"data_structures/stack"
 )
 
@@ -24,15 +23,9 @@ func (n *RopeNode) Data() string {
 	return n.data
 }
 
-func (n *RopeNode) weight() int {
-	weight := 0
-	if n.left != nil {
-		leavesOnLeftChild := n.left.CollectLeaves()
-		for _, leaf := range leavesOnLeftChild {
-			weight += leaf.len
-		}
-	}
-	return weight
+func (n *RopeNode) Balanced() bool {
+	// TODO
+	return false
 }
 
 /*
@@ -123,44 +116,29 @@ func IsValidRope(n *RopeNode) bool {
 
 *
 */
-func Rebalance(leaves []*RopeNode) *RopeNode {
+func Rebuild(leaves []*RopeNode) *RopeNode {
 
 	length := len(leaves)
 
-	q := &queue.Queue[*RopeNode]{}
+	if length <= 2 {
+		var right *RopeNode
+		if length == 2 {
+			right = leaves[1]
+		}
+		return &RopeNode{left: leaves[0], right: right, len: leaves[0].len}
+	}
 
-	for ind := 0; ind < length; ind++ {
+	nodes := make([]*RopeNode, 0)
 
-		node := &RopeNode{left: leaves[ind], len: leaves[ind].len}
-
+	for ind := 0; ind < length; ind = ind + 2 {
+		var right *RopeNode
 		if ind+1 < length {
-			node.right = leaves[ind+1]
+			right = leaves[ind+1]
 		}
-
-		q.Push(node)
+		nodes = append(nodes, &RopeNode{left: leaves[ind], right: right, len: leaves[ind].len})
 	}
 
-	for q.Size() > 2 {
-
-		left := *q.Pop()
-
-		node := &RopeNode{left: left, len: left.weight()}
-
-		if q.Peek() != nil {
-			node.right = *q.Pop()
-		}
-
-		q.Push(node)
-	}
-
-	root := &RopeNode{left: *q.Pop()}
-	if !q.Empty() {
-		root.right = *q.Pop()
-	}
-
-	root.len = root.left.len
-
-	return root
+	return Rebuild(nodes)
 }
 
 /*

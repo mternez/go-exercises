@@ -11,61 +11,68 @@ func (e *Element[T]) Value() T {
 }
 
 type Queue[T any] struct {
-	top    *Element[T]
-	bottom *Element[T]
+	head *Element[T]
+	tail *Element[T]
 }
 
 func (s *Queue[E]) Push(element E) {
 
 	e := &Element[E]{value: element}
-	if s.top == nil {
-		s.top = e
-		s.bottom = e
+	if s.head == nil {
+		s.head = e
+		s.tail = e
 	} else {
-		s.bottom.next = e
-		e.previous = s.bottom
-		s.bottom = e
+		s.tail.next = e
+		e.previous = s.tail
+		s.tail = e
 	}
 }
 
 func (s *Queue[E]) Pop() *E {
 
-	if s.top != nil {
+	if s.head != nil {
 
-		previousTop := s.top
+		previousHead := s.head
+		previousTail := s.tail
 
-		previousBottom := s.bottom
+		s.head = s.tail
 
-		s.top = s.bottom
-
-		if previousBottom.previous != nil {
-			s.bottom = previousBottom.previous
-			s.bottom.next = nil
-			previousBottom.previous = nil
+		if previousTail.previous != nil {
+			s.tail = previousTail.previous
+			s.tail.next = nil
+			previousTail.previous = nil
+		} else {
+			s.tail = nil
+			s.head = nil
 		}
 
-		return &previousTop.value
+		return &previousHead.value
 	}
+
 	return nil
 }
 
 func (s *Queue[E]) Peek() E {
-	return s.bottom.value
+	var value E
+	if s.tail != nil {
+		value = s.tail.value
+	}
+	return value
 }
 
 func (s *Queue[E]) Empty() bool {
-	return s.top == nil
+	return s.head == nil
 }
 
 func (s *Queue[E]) Size() int {
 	size := 0
-	bottom := s.bottom
-	if bottom != nil {
+	tail := s.tail
+	if tail != nil {
 		size++
 	}
-	for bottom.previous != nil {
-		bottom = bottom.previous
-		if bottom != nil {
+	for tail.previous != nil {
+		tail = tail.previous
+		if tail != nil {
 			size++
 		}
 	}
