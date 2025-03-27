@@ -1,6 +1,7 @@
 package rope
 
 import (
+	"data_structures/queue"
 	"data_structures/stack"
 )
 
@@ -19,32 +20,28 @@ func (n *RopeNode) isNonLeaf() bool {
 	return n.len == (n.right.len+n.left.len) && n.left != nil && n.right != nil && IsValidRope(n.left) && IsValidRope(n.right)
 }
 
-func (n *RopeNode) Left() *RopeNode {
-	return n.left
-}
-
-func (n *RopeNode) Right() *RopeNode {
-	return n.right
-}
-
 func (n *RopeNode) Data() string {
 	return n.data
 }
 
-func (n *RopeNode) Weight() int {
+func (n *RopeNode) weight() int {
 	weight := 0
 	if n.left != nil {
 		leavesOnLeftChild := n.left.CollectLeaves()
-		for _,leaf := range leavesOnLeftChild {
+		for _, leaf := range leavesOnLeftChild {
 			weight += leaf.len
 		}
 	}
 	return weight
 }
 
-/**
+/*
+*
+
 	Collects all leaves starting from node.
-**/
+
+*
+*/
 func (node *RopeNode) CollectLeaves() []*RopeNode {
 
 	leaves := make([]*RopeNode, 0)
@@ -70,13 +67,9 @@ func (node *RopeNode) CollectLeaves() []*RopeNode {
 	return leaves
 }
 
-func (root *RopeNode) String() string {
+func (root *RopeNode) ToString() string {
 
-	if root == nil {
-		return ""
-	}
-
-	if root.left == nil && root.right == nil {
+	if root == nil || (root.left == nil && root.right == nil) {
 		return ""
 	}
 
@@ -101,32 +94,82 @@ func (root *RopeNode) String() string {
 	return str
 }
 
-func NewRope(s string) *RopeNode {
+func NewRope(s string, minNodeSize int) *RopeNode {
+
 	if s == "" {
 		return nil
 	}
+
 	length := len(s)
 	half := length / 2
-	rope := &RopeNode{len: half}
-	if half == 0 {
-		rope.data = s
-		rope.len = 1
-		return rope
+
+	// Is a Leaf
+	if length == minNodeSize || length/minNodeSize == 0 || half < minNodeSize {
+		return &RopeNode{data: s, len: length}
 	}
-	leftString := s[:half]
-	rightString := s[half:]
-	rope.left = NewRope(leftString)
-	rope.right = NewRope(rightString)
-	return rope
+
+	// Is not a Leaf
+	return &RopeNode{left: NewRope(s[:half], minNodeSize), right: NewRope(s[half:], minNodeSize)}
 }
 
 func IsValidRope(n *RopeNode) bool {
 	return n.data == "" || n.isLeaf() || n.isNonLeaf()
 }
 
-/**
+/*
+*
+
+	Rebuilds a Rope from an ordered collection of leaves
+
+*
+*/
+func Rebalance(leaves []*RopeNode) *RopeNode {
+
+	length := len(leaves)
+
+	q := &queue.Queue[*RopeNode]{}
+
+	for ind := 0; ind < length; ind++ {
+
+		node := &RopeNode{left: leaves[ind], len: leaves[ind].len}
+
+		if ind+1 < length {
+			node.right = leaves[ind+1]
+		}
+
+		q.Push(node)
+	}
+
+	for q.Size() > 2 {
+
+		left := *q.Pop()
+
+		node := &RopeNode{left: left, len: left.weight()}
+
+		if q.Peek() != nil {
+			node.right = *q.Pop()
+		}
+
+		q.Push(node)
+	}
+
+	root := &RopeNode{left: *q.Pop()}
+	if !q.Empty() {
+		root.right = *q.Pop()
+	}
+
+	root.len = root.left.len
+
+	return root
+}
+
+/*
+*
+
 	Concatenates ropes "a" and "b".
-**/
+
+*
+*/
 func Concatenate(a *RopeNode, b *RopeNode) *RopeNode {
 
 	root := &RopeNode{left: a, right: b}
@@ -134,9 +177,13 @@ func Concatenate(a *RopeNode, b *RopeNode) *RopeNode {
 	return root
 }
 
-/**
+/*
+*
+
 	Splits "rope" at position "pos" into two new ropes.
-**/
+
+*
+*/
 func Split(rope *RopeNode, pos int) (*RopeNode, *RopeNode) {
 	return nil, nil
 }
@@ -145,10 +192,13 @@ func (n *RopeNode) Insert(pos int, str string) {
 
 }
 
-/**
+/*
+*
+
 	Delete a substring from a specified position and length.
-**/
+
+*
+*/
 func (n *RopeNode) Delete(start int, length int) {
 
 }
-
