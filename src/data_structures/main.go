@@ -2,13 +2,9 @@ package main
 
 import (
 	"data_structures/rope"
-	"fmt"
 )
 
 func main() {
-	root := rope.NewRope("Ropes are very cool you should try to use them", 1)
-	for _, leaf := range rope.Rebuild(root.CollectLeaves()).CollectLeaves() {
-		fmt.Printf("%s", leaf.Data())
-	}
-	fmt.Println("")
+	a := rope.NewRope("Ropes are very cool you should try to use them", 1)
+	a.Print()
 }
