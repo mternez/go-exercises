@@ -6,5 +6,5 @@ import (
 
 func main() {
 	a := rope.NewRope("Ropes are very cool you should try to use them", 1)
-	a.Print()
+	rope.Rebalance(a)
 }

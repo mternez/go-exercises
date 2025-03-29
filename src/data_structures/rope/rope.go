@@ -2,8 +2,6 @@ package rope
 
 import (
 	"data_structures/stack"
-	"fmt"
-	"strings"
 )
 
 type RopeNode struct {
@@ -23,6 +21,20 @@ func (n *RopeNode) isNonLeaf() bool {
 
 func (n *RopeNode) Data() string {
 	return n.data
+}
+
+func (n *RopeNode) Height() int {
+	h := 0
+	if n != nil {
+		h++
+		if n.left != nil {
+			h += n.left.Height()
+		}
+		if n.right != nil {
+			h += n.right.Height()
+		}
+	}
+	return h
 }
 
 /*
@@ -159,7 +171,7 @@ func Rebalance(root *RopeNode) *RopeNode {
 */
 func Concatenate(a *RopeNode, b *RopeNode) *RopeNode {
 
-	root := &RopeNode{left: a, right: b}
+	root := &RopeNode{left: a, right: b, len: a.len}
 
 	return Rebuild(root.CollectLeaves())
 }
@@ -188,28 +200,4 @@ func (n *RopeNode) Insert(pos int, str string) {
 */
 func (n *RopeNode) Delete(start int, length int) {
 
-}
-
-func (n *RopeNode) Print() {
-	fmt.Print(n.data)
-	if n.left != nil {
-		Print(n.left, 1)
-	}
-	if n.right != nil {
-		Print(n.right, 1)
-	}
-}
-
-func Print(n *RopeNode, depth int) {
-	if n.isLeaf() {
-		fmt.Printf("->%s%s\n", strings.Repeat(" ", depth), n.data)
-	} else {
-		fmt.Printf("<-%s\n", strings.Repeat(" ", depth))
-	}
-	if n.left != nil {
-		Print(n.left, depth+1)
-	}
-	if n.right != nil {
-		Print(n.right, depth+1)
-	}
 }
