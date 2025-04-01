@@ -22,9 +22,13 @@ func NewGapBuffer(size int, gap int) *GapBuffer {
 	}
 }
 
-func (b *GapBuffer) Insert(c rune, pos int) {
+func (b *GapBuffer) Insert(c rune) {
+	b.InsertAt(c, b.start)
+}
 
-	b.moveGapTo(pos)
+func (b *GapBuffer) InsertAt(c rune, pos int) {
+
+	b.MoveCursor(pos)
 	b.buffer[pos] = c
 	b.start++
 	if b.start == b.end {
@@ -32,32 +36,34 @@ func (b *GapBuffer) Insert(c rune, pos int) {
 	}
 }
 
-func (b *GapBuffer) Delete(pos int) {
-	b.moveGapTo(pos)
+func (b *GapBuffer) DeleteAt(pos int) {
+
+	b.MoveCursor(pos)
 	b.buffer[pos] = empty
 	if b.start > 0 {
 		b.start--
 	}
 }
 
-func (b *GapBuffer) moveGapTo(pos int) {
+func (b *GapBuffer) MoveCursor(pos int) {
 	if pos < 0 || pos > b.bufferSize {
 		fmt.Println("moveGapTo: out of bounds")
 		return
 	}
 
 	currentGapSize := (b.end - b.start)
+
 	if pos < b.start {
 		// Move left
-		for i := b.start - 1; i >= pos && i >= 0; i-- {
-			b.buffer[i+currentGapSize] = b.buffer[i]
+		for i := b.start; i > pos; i-- {
+			b.buffer[i+currentGapSize] = b.buffer[i-1]
 			b.buffer[i] = empty
 		}
 	} else if pos > b.start {
 		// Move right
-		for i := b.start; i < pos && i >= b.bufferSize; i++ {
-			b.buffer[i] = b.buffer[i+currentGapSize]
-			b.buffer[i+currentGapSize] = empty
+		for i := b.start; i < pos; i++ {
+			b.buffer[i+currentGapSize] = b.buffer[i]
+			b.buffer[i] = empty
 		}
 	}
 	b.start = pos
@@ -99,11 +105,12 @@ func (b *GapBuffer) EraseDrawnGap() {
 }
 
 func (b *GapBuffer) PrintWithVisibleGap(header string) {
-	fmt.Printf("===============\n%s\n===============\nstart:%d,end:%d\n", header, b.start, b.end)
+	fmt.Printf("====================================================================================================================================================================================\n")
+	fmt.Printf("%s\nstart:%d,end:%d\n", header, b.start, b.end)
 	b.DrawGap()
 	for _, r := range b.buffer {
 		if r == '_' {
-			fmt.Printf(" %s ", "|")
+			fmt.Printf(" %s ", "_")
 		} else if r == empty {
 			fmt.Printf(" %s ", ".")
 		} else {
@@ -112,5 +119,4 @@ func (b *GapBuffer) PrintWithVisibleGap(header string) {
 	}
 	fmt.Println("")
 	b.EraseDrawnGap()
-	fmt.Printf("===============\n")
 }
