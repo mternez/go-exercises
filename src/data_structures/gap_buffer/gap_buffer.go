@@ -26,6 +26,10 @@ func (b *GapBuffer) Insert(c rune) {
 	b.InsertAt(c, b.start)
 }
 
+func (b *GapBuffer) Delete() {
+	b.DeleteAt(b.start)
+}
+
 func (b *GapBuffer) InsertAt(c rune, pos int) {
 
 	b.MoveCursor(pos)
@@ -42,6 +46,9 @@ func (b *GapBuffer) DeleteAt(pos int) {
 	b.buffer[pos] = empty
 	if b.start > 0 {
 		b.start--
+	}
+	if b.end-b.start > b.gapSize {
+		b.end--
 	}
 }
 

@@ -14,5 +14,11 @@ func main() {
 		a.Insert(r)
 		a.PrintWithVisibleGap("After inserting '" + string(r) + "'")
 	}
+	for range str {
+		a.Delete()
+		a.PrintWithVisibleGap("After deleting")
+	}
+	a.MoveCursor(56)
+	a.PrintWithVisibleGap("After moving to 56")
 	fmt.Println(string(a.Buffer()))
 }
